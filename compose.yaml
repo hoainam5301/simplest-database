@@ -1,3 +1,220 @@
+# version: '3.8'
+# x-airflow-common:
+#   &airflow-common
+#   image: apache/airflow:2.0.0
+#   environment:
+#     - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+#     - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@postgres:5432/airflow
+#     - AIRFLOW__CORE__FERNET_KEY=FB0o_zt4e3Ziq3LdUUO7F2Z95cvFFx16hU8jTeR1ASM=
+#     - AIRFLOW__CORE__LOAD_EXAMPLES=False
+#     - AIRFLOW__CORE__LOGGING_LEVEL=INFO
+#   volumes:
+#     - ./dags:/opt/airflow/dags
+#     - ./airflow-data/logs:/opt/airflow/logs
+#     - ./airflow-data/plugins:/opt/airflow/plugins
+#     - ./airflow-data/airflow.cfg:/opt/airlfow/airflow.cfg
+#   depends_on:
+#     - postgres
+
+# services:
+#   spark-master:
+#     image: spark:latest
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - ./apps:/opt/spark-apps
+#     environment:
+#       - SPARK_LOCAL_IP=spark-master
+#       - SPARK_WORKLOAD=master
+#   spark-worker:
+#     image: spark:latest
+#     ports:
+#       - "8081:8080"
+#     depends_on:
+#       - spark-master
+#     environment:
+#       - SPARK_MASTER=spark://spark-master:8080
+#       - SPARK_WORKER_CORES=1
+#       - SPARK_WORKER_MEMORY=1G
+#       - SPARK_DRIVER_MEMORY=1G
+#       - SPARK_EXECUTOR_MEMORY=1G
+#       - SPARK_WORKLOAD=worker
+#       - SPARK_LOCAL_IP=spark-worker-a
+#     volumes:
+#        - ./apps:/opt/spark-apps
+
+#   namenode:
+#     image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+#     volumes:
+#       - namenode:/hadoop/dfs/name
+#     environment:
+#       - CLUSTER_NAME=test
+#     env_file:
+#       - ./.env
+#     ports:
+#       - "50070:50070"
+#   datanode:
+#     image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+#     volumes:
+#       - datanode:/hadoop/dfs/data
+#     env_file:
+#       - ./.env
+#     environment:
+#       SERVICE_PRECONDITION: "namenode:50070"
+#     ports:
+#       - "50075:50075"
+#   hive-server:
+#     image: bde2020/hive:2.3.2-postgresql-metastore
+#     env_file:
+#       - ./.env
+#     environment:
+#       HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+#       SERVICE_PRECONDITION: "hive-metastore:9083"
+#     ports:
+#       - "10000:10000"
+#   hive-metastore:
+#     image: bde2020/hive:2.3.2-postgresql-metastore
+#     env_file:
+#       - ./.env
+#     command: /opt/hive/bin/hive --service metastore
+#     environment:
+#       SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
+#     ports:
+#       - "9083:9083"
+#   hive-metastore-postgresql:
+#     image: bde2020/hive-metastore-postgresql:2.3.0
+#   presto-coordinator:
+#     image: shawnzhu/prestodb:0.181
+#     ports:
+#       - "8081:8081"
+  
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:latest
+#     environment:
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#       ZOOKEEPER_TICK_TIME: 2000
+#     ports:
+#       - 22181:2181
+  
+#   kafka:
+#     image: confluentinc/cp-kafka:latest
+#     depends_on:
+#       - zookeeper
+#     ports:
+#       - 29092:29092
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  
+#   flink-master:
+#    image: bde2020/flink-master:1.14.5-hadoop3.2
+#    hostname: flink-master
+#    container_name: flink-master
+# #   networks:
+# #     - hadoop
+#    ports:
+#      - "8080:8080"
+#      - "8081:8081"
+#   flink-worker:
+#    image: bde2020/flink-worker:1.14.5-hadoop3.2
+#    hostname: flink-worker
+#    container_name: flink-worker
+# #   networks:
+# #     - hadoop
+#    environment:
+#      - FLINK_MASTER_PORT_6123_TCP_ADDR=flink-master
+# #     - FLINK_NUM_TASK_SLOTS=2
+#    depends_on:
+#       - flink-master
+
+#   postgres:
+#     container_name: postgres
+#     image: postgres:12-alpine
+#     environment:
+#       - POSTGRES_USER=${POSTGRES_USER}
+#       - POSTGRES_PASSWORD=${POSTGRES_PW}
+#       - POSTGRES_DB=${POSTGRES_DB}
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - ./scripts/:/docker-entrypoint-initdb.d/
+#       - postgres_data:/var/lib/postgresql/data
+#     restart: always
+#     logging:
+#       options:
+#         max-size: 10m
+#         max-file: "3"
+#     networks:
+#       - postgres_network
+#   pgadmin:
+#     container_name: pgadmin
+#     image: dpage/pgadmin4:latest
+#     depends_on:
+#       - postgres
+#     environment:
+#       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
+#       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PW}
+#     ports:
+#       - "9000:80"
+#     restart: always
+#     volumes:
+#     - pgadmin_data:/var/lib/pgadmin
+#     networks:
+#       - postgres_network
+  
+#   dremio:
+#     container_name: dremio
+#     image: dremio/dremio-oss:$DREMIO_IMAGE_VERSION
+#     volumes:
+#       - dremio_data:/opt/dremio/data
+#     ports:
+#       - "9047:9047"
+#       - "31010:31010"
+#       - "32010:32010"
+#       - "45678:45678"
+#     deploy:
+#       restart_policy:
+#         condition: on-failure
+#         delay: 5s
+#         max_attempts: 3
+#         window: 120s
+#     networks:
+#       - postgres_network
+
+#   airflow-init:
+#     << : *airflow-common
+#     container_name: airflow_init
+#     entrypoint: /bin/bash
+#     command:
+#       - -c
+#       - airflow users list || ( airflow db init &&
+#         airflow users create
+#           --role Admin
+#           --username airflow
+#           --password airflow
+#           --email airflow@airflow.com
+#           --firstname airflow
+#           --lastname airflow )
+#     restart: on-failure
+
+
+# volumes:
+#   spark_data:
+#   namenode:
+#   datanode:
+#   postgres_data:
+#   dremio_data:
+#   pgadmin_data:
+# networks:
+#   kafka_network:
+#     driver: bridge
+#   postgres_network:
+#     driver: bridge
+
 version: "3.8"
 
 services:
