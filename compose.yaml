@@ -281,3 +281,4 @@ volumes:
 networks:
   postgres_network:
     driver: bridge
+  
